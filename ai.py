@@ -60,12 +60,15 @@ class GenerateScene(bpy.types.Operator):
         camera.scale = (100,100,100)
         
         #calculate camera frustum
+        frustum = []
         matrix = camera.matrix_basis
         frame = [matrix @ v for v in camera.data.view_frame(scene=scene)]
         origin = matrix.to_translation()
         frame.append(origin)
+        
         for p in frame:
             bpy.ops.object.empty_add(location=p)
+            frustum.append(context.object)
         
         # create ground plane
         if properties.ground:
@@ -75,7 +78,51 @@ class GenerateScene(bpy.types.Operator):
                 location=(0, 50, 0),
                 size=200
             )
+
+        # generate nr of primitives inside the frustum
+        for i in range(properties.nrObj):
+            obj_type = int(random.random() * 7)
             
+            if obj_type == 0:
+                bpy.ops.mesh.primitive_cube_add()
+            if obj_type == 1:
+                bpy.ops.mesh.primitive_uv_sphere_add()
+            if obj_type == 2:
+                bpy.ops.mesh.primitive_ico_sphere_add()
+            if obj_type == 3:
+                bpy.ops.mesh.primitive_cylinder_add()
+            if obj_type == 4:
+                bpy.ops.mesh.primitive_cone_add()
+            if obj_type == 5:
+                bpy.ops.mesh.primitive_torus_add()
+            if obj_type == 6:
+                bpy.ops.mesh.primitive_monkey_add()
+
+            object = context.object
+            
+            scene_size_x = (frustum[1].location.x * 2)
+            scene_size_y = (frustum[0].location.z + (frustum[1].location.z * -1))
+            scene_size_z = frustum[0].location.y
+            
+            random_pos_x = random.random()
+            
+            pos_x = ((random_pos_x * scene_size_x) + frustum[2].location.x)
+            pos_y = ((random.random() * scene_size_y) + frustum[1].location.z)
+            if(properties.ground and pos_y < 0):
+                pos_y = 0
+            
+            pos_z = random_pos_x
+            if pos_z > 0.5:
+                pos_z = pos_z - ((pos_z-0.5)*2)
+            if pos_z < 0.46:
+                pos_z = pos_z + 0.46
+            pos_z = ((pos_z / 0.5) * scene_size_z)
+            
+            object.location = (pos_x, pos_z, pos_y)
+            
+            object.rotation_euler = (math.radians(random.random()*180), math.radians(random.random()*180), math.radians(random.random()*180))
+            
+            object.scale = (random.random() * 15, random.random() * 15, random.random() * 15)
 
         # switch to camera perspective
         for area in bpy.context.screen.areas:
