@@ -30,6 +30,14 @@ class Properties(PropertyGroup):
         min = 1,
         max = 10
     )
+    
+    groundBias: FloatProperty(
+        name = "",
+        description = "Ground Bias",
+        default = 0,
+        min = 0,
+        max = 1
+    )
 
 # Create the scene
 class GenerateScene(bpy.types.Operator):
@@ -70,6 +78,8 @@ class GenerateScene(bpy.types.Operator):
             bpy.ops.object.empty_add(location=p)
             frustum.append(context.object)
         
+        camera.data.lens = 32
+        
         # create ground plane
         if properties.ground:
             bpy.ops.mesh.primitive_plane_add(
@@ -103,26 +113,26 @@ class GenerateScene(bpy.types.Operator):
             scene_size_x = (frustum[1].location.x * 2)
             scene_size_y = (frustum[0].location.z + (frustum[1].location.z * -1))
             scene_size_z = frustum[0].location.y
+            min_z = 30
             
-            random_pos_x = random.random()
+            pos_z = random.random() * scene_size_z + min_z
+            if pos_z > scene_size_z:
+                pos_z = scene_size_z
             
-            pos_x = ((random_pos_x * scene_size_x) + frustum[2].location.x)
-            pos_y = ((random.random() * scene_size_y) + frustum[1].location.z)
-            if(properties.ground and pos_y < 0):
+            calc_x = (pos_z * (scene_size_x/2)) / (scene_size_z)
+            pos_x = random.random() * calc_x * (-1 if random.random() >= 0.5 else 1)
+            
+            if properties.ground and random.random() < properties.groundBias:
                 pos_y = 0
-            
-            pos_z = random_pos_x
-            if pos_z > 0.5:
-                pos_z = pos_z - ((pos_z-0.5)*2)
-            if pos_z < 0.46:
-                pos_z = pos_z + 0.46
-            pos_z = ((pos_z / 0.5) * scene_size_z)
+            else:
+                calc_y = (pos_z * (scene_size_y/2)) / (scene_size_z)
+                pos_y = random.random() * calc_y
             
             object.location = (pos_x, pos_z, pos_y)
             
             object.rotation_euler = (math.radians(random.random()*180), math.radians(random.random()*180), math.radians(random.random()*180))
             
-            object.scale = (random.random() * 15, random.random() * 15, random.random() * 15)
+            object.scale = (random.random() * 5, random.random() * 5, random.random() * 5)
 
         # switch to camera perspective
         for area in bpy.context.screen.areas:
@@ -162,6 +172,7 @@ class GeneratePanel(bpy.types.Panel):
         row.operator(GenerateScene.bl_idname, text = "Generate", icon = "SCENE_DATA")
         row = layout.row()
         row.label(text = (str(properties.nrObj) + " object(s)") + (" with ground" if properties.ground else ""))
+        row.prop(properties, "groundBias", slider = True)
         
 # Evaluate section
 class EvaluatePanel(bpy.types.Panel):
