@@ -2,6 +2,9 @@ import bpy
 import math
 import bgl
 import random
+import cv2
+import os
+import uuid
 from bpy.props import (StringProperty,
                        BoolProperty,
                        IntProperty,
@@ -212,15 +215,22 @@ class SaveScene(bpy.types.Operator):
             ShowMessageBox("Error: Filepath field is empty", "No Filepath Set", 'ERROR')
             return{'CANCELLED'}
         
-        # render viewport and save image
+        # render viewport and render image
         sce = bpy.context.scene.name
         bpy.ops.render.opengl(write_still=True)
-        bpy.data.images["Render Result"].save_render(filepath=bpy.path.abspath(properties.filepath) + 
-                                                    str(properties.ratings) + "_" +
-                                                    (("0"+str(properties.nrObj)) if properties.nrObj != 10 else (str(properties.nrObj))) +
-                                                    ("_G" if properties.ground else "_N") +
-                                                    ".png"
-                                                     )
+        
+        # convert to grayscale
+        image = cv2.imread("C:\image.png")
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        #save grayscale
+        name = (str(properties.ratings) + "_") + (("0"+str(properties.nrObj)) if properties.nrObj != 10 else (str(properties.nrObj))) + ("_G." if properties.ground else "_N.") + str(uuid.uuid4()) + ".png"
+        path = bpy.path.abspath(properties.filepath) + name
+        cv2.imwrite(path, gray)
+        
+        # delete temp
+        os.remove("C:/image.png")
+        
         return {'FINISHED'}
 
 # Generate section
