@@ -18,6 +18,9 @@ from bpy.types import (Panel,
                        Operator,
                        PropertyGroup,
                        )
+import numpy as np
+from tensorflow import keras
+import sklearn
 
 # Properties storage
 class Properties(PropertyGroup):
@@ -76,12 +79,12 @@ class Properties(PropertyGroup):
     
     info_noGround: StringProperty(
         name =  "info_noground",
-        default = "0/0/0/0/0/0/0/0/0/0"
+        default = "0 0 0 0 0 0 0 0 0 0"
     )
     
     info_Ground: StringProperty(
         name =  "info_ground",
-        default = "0/0/0/0/0/0/0/0/0/0"
+        default = "0 0 0 0 0 0 0 0 0 0"
     )
     
     info_n1: StringProperty(
@@ -123,6 +126,21 @@ class Properties(PropertyGroup):
     info_g5: StringProperty(
         name = "info_g5",
         default = "5| 0   0   0   0   0   0   0   0   0  0"
+    )
+        
+    filepath_export: StringProperty(
+        name = "Path",
+        description = "Path to the folder to export the trained data to",
+        default = "",
+        subtype = 'DIR_PATH'
+    )
+    
+    epochs: IntProperty(
+        name = "",
+        description="Epochs to Train for",
+        default = 20,
+        min = 1,
+        max = 100
     )
     
 
@@ -294,7 +312,6 @@ class SaveScene(bpy.types.Operator):
         # delete temp
         os.remove("C:/image.png")
         
-        
         # turn on overlays
         bpy.context.space_data.overlay.show_overlays = True
         
@@ -434,7 +451,7 @@ class DataInfo(bpy.types.Operator):
                     g7 = g7 + 1
                     if filename[0] == '1':
                         i_g7_1 = i_g7_1 + 1
-                    if file7ame[0] == '2':
+                    if filename[0] == '2':
                         i_g7_2 = i_g7_2 + 1
                     if filename[0] == '3':
                         i_g7_3 = i_g7_3 + 1
@@ -630,6 +647,59 @@ class TrainNN(bpy.types.Operator):
             ShowMessageBox("Error: Filepath field is empty", "No Filepath Set", 'ERROR')
             return{'CANCELLED'}
         
+        train_image = []
+        labels = []
+        
+        for filename in os.listdir(bpy.path.abspath(properties.filepath_train)):
+            img = keras.utils.load_img(os.path.join(bpy.path.abspath(properties.filepath_train), filename), target_size = (68, 120 , 3), grayscale = False)
+            img = keras.utils.img_to_array(img)
+            #[0-255] -> [0-1]
+            img = img/255
+            train_image.append(img)
+            # append score
+            score = int(filename[0])
+            
+            score = score - 1 # this is because To categorical works from 0 to number of classes
+
+            labels.append(score)
+            
+            print(filename)
+        
+        X = np.array(train_image)
+        y = np.array(labels)
+        print (X.shape)
+        print (y.shape)
+        
+        y_cat=keras.utils.to_categorical(y, num_classes = 5)
+        print(y_cat.shape)
+        
+        model = keras.models.Sequential()
+        model.add(keras.layers.Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(68,120,3)))
+        model.add(keras.layers.Conv2D(64, (3, 3), activation='relu'))
+        model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        model.add(keras.layers.Dropout(0.25))
+        model.add(keras.layers.Conv2D(64, (3, 3), activation='relu'))
+        model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        model.add(keras.layers.Dropout(0.25))
+        model.add(keras.layers.Flatten())
+        model.add(keras.layers.Dense(64, activation='relu'))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(5, activation='softmax'))
+        
+        model.summary()
+
+        model.compile(loss='categorical_crossentropy',optimizer='Adam',metrics=['accuracy'])
+        
+        import sklearn.model_selection
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y_cat, random_state=42, test_size=0.1)
+        
+        model.fit(X_train, y_train, epochs=properties.epochs, validation_data=(X_test, y_test))
+        test_loss, test_acc = model.evaluate(X_test, y_test, verbose=2)
+        
+        print(test_acc)
+        model.save(os.path.join(bpy.path.abspath(properties.filepath_export), str(test_acc)+'.h5'))
+        
+        keras.backend.clear_session()
         
         return {'FINISHED'}
 
@@ -688,50 +758,128 @@ class TrainPanel(bpy.types.Panel):
         row.label(text="Labelled data:")
         row.prop(properties, 'filepath_train', text="")
         row = layout.row()
-        row.operator(DataInfo.bl_idname, text = "Info")
-        row = layout.row()
-        row.label(text="    1   2   3   4   5   6   7   8   9  10")
-        row = layout.row()
-        row.label(text=("N " + properties.info_noGround))
-        row = layout.row()
-        row.alert = True
-        row.label(text="1| " + properties.info_n1)
-        row = layout.row()
-        row.alert = True
-        row.label(text="2| " + properties.info_n2)
-        row = layout.row()
-        row.alert = True
-        row.label(text="3| " + properties.info_n3)
-        row = layout.row()
-        row.alert = True
-        row.label(text="4| " + properties.info_n4)
-        row = layout.row()
-        row.alert = True
-        row.label(text="5| " + properties.info_n5)
-        row = layout.row()
-        row.label(text=("G " + properties.info_Ground))
         
-        row = layout.row()
         
-        row.alert = True
-        row.label(text="1| " + properties.info_g1)
+        box = layout.box()
+        obj = context.object
+        row = box.row()
+        row.prop(obj, "expanded",
+            icon="TRIA_DOWN" if obj.expanded else "TRIA_RIGHT",
+            icon_only=True, emboss=False, text = "Data Info"
+        )
+
+        if obj.expanded:
+            row.operator(DataInfo.bl_idname, text = "Refresh", icon="FILE_REFRESH")
+            row = box.row()
+            row.label(text=" ")
+            row.label(text="1")
+            row.label(text="2")
+            row.label(text="3")
+            row.label(text="4")
+            row.label(text="5")
+            row.label(text="6")
+            row.label(text="7")
+            row.label(text="8")
+            row.label(text="9")
+            row.label(text="10")
+            
+            row = box.row()
+            info = properties.info_noGround.split(' ')
+            row.label(text="N")
+            row.label(text=info[0])
+            row.label(text=info[1])
+            row.label(text=info[2])
+            row.label(text=info[3])
+            row.label(text=info[4])
+            row.label(text=info[5])
+            row.label(text=info[6])
+            row.label(text=info[7])
+            row.label(text=info[8])
+            row.label(text=info[9])
+            
+            for i in range(5):
+                row = box.row()
+                row.alert = True
+                if i == 0:
+                    info = properties.info_n1.split(' ')
+                elif i == 1:
+                    info = properties.info_n2.split(' ')
+                elif i == 2:
+                    info = properties.info_n3.split(' ')
+                elif i == 3:
+                    info = properties.info_n4.split(' ')
+                else:
+                    info = properties.info_n5.split(' ')
+                row.label(text=str(i+1)+"|")
+                row.label(text=info[0])
+                row.label(text=info[1])
+                row.label(text=info[2])
+                row.label(text=info[3])
+                row.label(text=info[4])
+                row.label(text=info[5])
+                row.label(text=info[6])
+                row.label(text=info[7])
+                row.label(text=info[8])
+                row.label(text=info[9])
+            
+            
+            row = box.row()
+            info = properties.info_Ground.split(' ')
+            row.label(text="G")
+            row.label(text=info[0])
+            row.label(text=info[1])
+            row.label(text=info[2])
+            row.label(text=info[3])
+            row.label(text=info[4])
+            row.label(text=info[5])
+            row.label(text=info[6])
+            row.label(text=info[7])
+            row.label(text=info[8])
+            row.label(text=info[9])
+            
+            for i in range(5):
+                row = box.row()
+                row.alert = True
+                if i == 0:
+                    info = properties.info_g1.split(' ')
+                elif i == 1:
+                    info = properties.info_g2.split(' ')
+                elif i == 2:
+                    info = properties.info_g3.split(' ')
+                elif i == 3:
+                    info = properties.info_g4.split(' ')
+                else:
+                    info = properties.info_g5.split(' ')
+                row.label(text=str(i+1)+"|")
+                row.label(text=info[0])
+                row.label(text=info[1])
+                row.label(text=info[2])
+                row.label(text=info[3])
+                row.label(text=info[4])
+                row.label(text=info[5])
+                row.label(text=info[6])
+                row.label(text=info[7])
+                row.label(text=info[8])
+                row.label(text=info[9])
+                
+            row = box.row()
+            row.label(text=" ")
+            row.label(text="1")
+            row.label(text="2")
+            row.label(text="3")
+            row.label(text="4")
+            row.label(text="5")
+            row.label(text="6")
+            row.label(text="7")
+            row.label(text="8")
+            row.label(text="9")
+            row.label(text="10")
+            
         row = layout.row()
-        row.alert = True
-        row.label(text="2| " + properties.info_g2)
+        row.prop(properties, 'filepath_export', text="")
+        row.prop(properties, 'epochs', text="Epochs")
         row = layout.row()
-        row.alert = True
-        row.label(text="3| " + properties.info_g3)
-        row = layout.row()
-        row.alert = True
-        row.label(text="4| " + properties.info_g4)
-        row = layout.row()
-        row.alert = True
-        row.label(text="5| " + properties.info_g5)
-        row = layout.row()
-        row.label(text="    1   2   3   4   5   6   7   8   9  10")
-        row = layout.row()
-        
-        row.operator(TrainNN.bl_idname, text = "Train")
+        row.operator(TrainNN.bl_idname, text = "Train and Export", icon="HAND")
         
 # Evaluate section
 class EvaluatePanel(bpy.types.Panel):
@@ -767,6 +915,7 @@ def register():
     for cls in classes:
         register_class(cls)
     
+    bpy.types.Object.expanded = bpy.props.BoolProperty(default=True)
     bpy.types.Scene.custom_properties = PointerProperty(type=Properties)
     
 
@@ -776,6 +925,7 @@ def unregister():
         unregister_class(cls)
     
     del bpy.types.Scene.custom_properties
+    del bpy.types.Object.expanded
     
     
 if __name__ == "__main__":
