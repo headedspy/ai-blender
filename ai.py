@@ -130,7 +130,7 @@ class Properties(PropertyGroup):
         
     filepath_export: StringProperty(
         name = "Path",
-        description = "Path to the folder to export the trained data to",
+        description = "Path to the folder to export the trained model",
         default = "",
         subtype = 'DIR_PATH'
     )
@@ -141,6 +141,18 @@ class Properties(PropertyGroup):
         default = 20,
         min = 1,
         max = 100
+    )
+    
+    filepath_import: StringProperty(
+        name = "Path",
+        description = "Path to the trained model",
+        default = "",
+        subtype = 'FILE_PATH'
+    )
+    
+    comp_rating: IntProperty(
+        name = "",
+        default = 1
     )
     
 
@@ -295,7 +307,6 @@ class SaveScene(bpy.types.Operator):
         
         # render viewport and render image
         sce = bpy.context.scene.name
-        #bpy.context.scene.render.filepath = "C:\image.png"
         bpy.ops.render.opengl(write_still=True)
         bpy.data.images["Render Result"].save_render("C:\image.png")
         
@@ -703,6 +714,50 @@ class TrainNN(bpy.types.Operator):
         
         return {'FINISHED'}
 
+class UseNN(bpy.types.Operator):
+    bl_idname = "wm.use"
+    bl_label = "a"
+    
+    def execute(self, context):
+        scene = context.scene
+        properties = scene.custom_properties
+        
+        model = keras.models.load_model(bpy.path.abspath(properties.filepath_import))
+        
+        probability_model = keras.Sequential([
+          model,
+          keras.layers.Softmax()
+        ])
+        
+        # render viewport
+        sce = bpy.context.scene.name
+        
+        bpy.context.space_data.overlay.show_overlays = False
+        
+        bpy.ops.render.opengl(write_still=True)
+        bpy.data.images["Render Result"].save_render("C:\image.png")
+        
+        bpy.context.space_data.overlay.show_overlays = True
+        
+        img = keras.utils.load_img("C:\image.png", target_size = (68, 120 , 3), grayscale = False)
+        img = keras.utils.img_to_array(img)
+        #[0-255] -> [0-1]
+        img = img/255
+        
+        img = np.expand_dims(img, axis=0)
+        
+        prediction = probability_model(img)
+        rating = np.argmax(prediction[0], axis=0) + 1
+        print(prediction)
+        properties.comp_rating = rating
+        
+        # delete temp
+        os.remove("C:/image.png")
+        
+        keras.backend.clear_session()
+        
+        return {'FINISHED'}
+
 # Generate section
 class GeneratePanel(bpy.types.Panel):
     bl_label = "Generate"
@@ -891,9 +946,14 @@ class EvaluatePanel(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
+        properties = scene.custom_properties
         
         row = layout.row()
-        row.label(text="Evaluate composition/colorization")
+        row.prop(properties, 'filepath_import', text="Trained model")
+        row.operator(UseNN.bl_idname, text = "Evaluate", icon="TRACKER_DATA")
+        row = layout.row()
+        row.label(text="Compositional Rating: " + str(properties.comp_rating))
         
 # ------------------------------------------------------------------------
 #     Registration
@@ -903,6 +963,7 @@ classes = (
     GenerateScene,
     SaveScene,
     TrainNN,
+    UseNN,
     GeneratePanel,
     TrainPanel,
     Properties,
