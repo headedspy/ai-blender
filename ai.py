@@ -22,6 +22,21 @@ import numpy as np
 from tensorflow import keras
 import sklearn
 
+
+
+from tensorflow.keras import regularizers
+from tensorflow.keras import callbacks
+from tensorflow.keras import metrics
+from tensorflow.keras import optimizers
+
+class LearningRateReducerCb(callbacks.Callback):
+
+  def on_epoch_end(self, epoch, logs={}):
+    old_lr = self.model.optimizer.lr.read_value()
+    new_lr = old_lr * 0.99
+    print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
+    self.model.optimizer.lr.assign(new_lr)
+
 # Properties storage
 class Properties(PropertyGroup):
     ground: BoolProperty(
@@ -55,10 +70,8 @@ class Properties(PropertyGroup):
     ratings: EnumProperty(
         items=[
             ('1', '1', 'Terrible', '', 0),
-            ('2', '2', 'Bad', '', 1),
-            ('3', '3', 'Passable', '', 2),
-            ('4', '4', 'Good', '', 3),
-            ('5', '5', 'Amazing', '', 4)
+            ('2', '2', 'Passable', '', 1),
+            ('3', '3', 'Amazing', '', 2)
         ],
         default='3'
     )
@@ -99,14 +112,6 @@ class Properties(PropertyGroup):
         name = "info_n3",
         default = "3| 0   0   0   0   0   0   0   0   0  0"
     )
-    info_n4: StringProperty(
-        name = "info_n4",
-        default = "4| 0   0   0   0   0   0   0   0   0  0"
-    )
-    info_n5: StringProperty(
-        name = "info_n5",
-        default = "5| 0   0   0   0   0   0   0   0   0  0"
-    )
     info_g1: StringProperty(
         name = "info_g1",
         default = "1| 0   0   0   0   0   0   0   0   0  0"
@@ -118,14 +123,6 @@ class Properties(PropertyGroup):
     info_g3: StringProperty(
         name = "info_g3",
         default = "3| 0   0   0   0   0   0   0   0   0  0"
-    )
-    info_g4: StringProperty(
-        name = "info_g4",
-        default = "4| 0   0   0   0   0   0   0   0   0  0"
-    )
-    info_g5: StringProperty(
-        name = "info_g5",
-        default = "5| 0   0   0   0   0   0   0   0   0  0"
     )
         
     filepath_export: StringProperty(
@@ -342,47 +339,16 @@ class DataInfo(bpy.types.Operator):
             return{'CANCELLED'}
         
         #counters
-        n1 = 0
-        n2 = 0
-        n3 = 0
-        n4 = 0
-        n5 = 0
-        n6 = 0
-        n7 = 0
-        n8 = 0
-        n9 = 0
-        n10 = 0
-        g1 = 0
-        g2 = 0
-        g3 = 0
-        g4 = 0
-        g5 = 0
-        g6 = 0
-        g7 = 0
-        g8 = 0
-        g9 = 0
-        g10 = 0
+        n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = n10 = 0
+        g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = g10 = 0
+        
         i_n1_1 = i_n2_1 = i_n3_1 = i_n4_1 = i_n5_1 = i_n6_1 = i_n7_1 = i_n8_1 = i_n9_1 = i_n10_1 = 0
         i_n1_2 = i_n2_2 = i_n3_2 = i_n4_2 = i_n5_2 = i_n6_2 = i_n7_2 = i_n8_2 = i_n9_2 = i_n10_2 = 0
         i_n1_3 = i_n2_3 = i_n3_3 = i_n4_3 = i_n5_3 = i_n6_3 = i_n7_3 = i_n8_3 = i_n9_3 = i_n10_3 = 0
-        i_n1_4 = i_n2_4 = i_n3_4 = i_n4_4 = i_n5_4 = i_n6_4 = i_n7_4 = i_n8_4 = i_n9_4 = i_n10_4 = 0
-        i_n1_5 = i_n2_5 = i_n3_5 = i_n4_5 = i_n5_5 = i_n6_5 = i_n7_5 = i_n8_5 = i_n9_5 = i_n10_5 = 0
-        i_n1_6 = i_n2_6 = i_n3_6 = i_n4_6 = i_n5_6 = i_n6_6 = i_n7_6 = i_n8_6 = i_n9_6 = i_n10_6 = 0
-        i_n1_7 = i_n2_7 = i_n3_7 = i_n4_7 = i_n5_7 = i_n6_7 = i_n7_7 = i_n8_7 = i_n9_7 = i_n10_7 = 0
-        i_n1_8 = i_n2_8 = i_n3_8 = i_n4_8 = i_n5_8 = i_n6_8 = i_n7_8 = i_n8_8 = i_n9_8 = i_n10_8 = 0
-        i_n1_9 = i_n2_9 = i_n3_9 = i_n4_9 = i_n5_9 = i_n6_9 = i_n7_9 = i_n8_9 = i_n9_9 = i_n10_9 = 0
-        i_n1_10 = i_n2_10 = i_n3_10 = i_n4_10 = i_n5_10 = i_n6_10 = i_n7_10 = i_n8_10 = i_n9_10 = i_n10_10 = 0
-  
+        
         i_g1_1 = i_g2_1 = i_g3_1 = i_g4_1 = i_g5_1 = i_g6_1 = i_g7_1 = i_g8_1 = i_g9_1 = i_g10_1 = 0
         i_g1_2 = i_g2_2 = i_g3_2 = i_g4_2 = i_g5_2 = i_g6_2 = i_g7_2 = i_g8_2 = i_g9_2 = i_g10_2 = 0
         i_g1_3 = i_g2_3 = i_g3_3 = i_g4_3 = i_g5_3 = i_g6_3 = i_g7_3 = i_g8_3 = i_g9_3 = i_g10_3 = 0
-        i_g1_4 = i_g2_4 = i_g3_4 = i_g4_4 = i_g5_4 = i_g6_4 = i_g7_4 = i_g8_4 = i_g9_4 = i_g10_4 = 0
-        i_g1_5 = i_g2_5 = i_g3_5 = i_g4_5 = i_g5_5 = i_g6_5 = i_g7_5 = i_g8_5 = i_g9_5 = i_g10_5 = 0
-        i_g1_6 = i_g2_6 = i_g3_6 = i_g4_6 = i_g5_6 = i_g6_6 = i_g7_6 = i_g8_6 = i_g9_6 = i_g10_6 = 0
-        i_g1_7 = i_g2_7 = i_g3_7 = i_g4_7 = i_g5_7 = i_g6_7 = i_g7_7 = i_g8_7 = i_g9_7 = i_g10_7 = 0
-        i_g1_8 = i_g2_8 = i_g3_8 = i_g4_8 = i_g5_8 = i_g6_8 = i_g7_8 = i_g8_8 = i_g9_8 = i_g10_8 = 0
-        i_g1_9 = i_g2_9 = i_g3_9 = i_g4_9 = i_g5_9 = i_g6_9 = i_g7_9 = i_g8_9 = i_g9_9 = i_g10_9 = 0
-        i_g1_10 = i_g2_10 = i_g3_10 = i_g4_10 = i_g5_10 = i_g6_10 = i_g7_10 = i_g8_10 = i_g9_10 = i_g10_10 = 0  
         
         for filename in os.listdir(bpy.path.abspath(properties.filepath_train)):
             if filename[5] == 'G':
@@ -394,10 +360,6 @@ class DataInfo(bpy.types.Operator):
                         i_g1_2 = i_g1_2 + 1
                     if filename[0] == '3':
                         i_g1_3 = i_g1_3 + 1
-                    if filename[0] == '4':
-                        i_g1_4 = i_g1_4 + 1
-                    if filename[0] == '5':
-                        i_g1_5 = i_g1_5 + 1
                 elif filename[3] == '2':
                     g2 = g2 + 1
                     if filename[0] == '1':
@@ -406,10 +368,6 @@ class DataInfo(bpy.types.Operator):
                         i_g2_2 = i_g2_2 + 1
                     if filename[0] == '3':
                         i_g2_3 = i_g2_3 + 1
-                    if filename[0] == '4':
-                        i_g2_4 = i_g2_4 + 1
-                    if filename[0] == '5':
-                        i_g2_5 = i_g2_5 + 1
                 elif filename[3] == '3':
                     g3 = g3 + 1
                     if filename[0] == '1':
@@ -418,10 +376,6 @@ class DataInfo(bpy.types.Operator):
                         i_g3_2 = i_g3_2 + 1
                     if filename[0] == '3':
                         i_g3_3 = i_g3_3 + 1
-                    if filename[0] == '4':
-                        i_g3_4 = i_g3_4 + 1
-                    if filename[0] == '5':
-                        i_g3_5 = i_g3_5 + 1
                 elif filename[3] == '4':
                     g4 = g4 + 1
                     if filename[0] == '1':
@@ -430,10 +384,6 @@ class DataInfo(bpy.types.Operator):
                         i_g4_2 = i_g4_2 + 1
                     if filename[0] == '3':
                         i_g4_3 = i_g4_3 + 1
-                    if filename[0] == '4':
-                        i_g4_4 = i_g4_4 + 1
-                    if filename[0] == '5':
-                        i_g4_5 = i_g4_5 + 1
                 elif filename[3] == '5':
                     g5 = g5 + 1
                     if filename[0] == '1':
@@ -442,10 +392,6 @@ class DataInfo(bpy.types.Operator):
                         i_g5_2 = i_g5_2 + 1
                     if filename[0] == '3':
                         i_g5_3 = i_g5_3 + 1
-                    if filename[0] == '4':
-                        i_g5_4 = i_g5_4 + 1
-                    if filename[0] == '5':
-                        i_g5_5 = i_g5_5 + 1
                 elif filename[3] == '6':
                     g6 = g6 + 1
                     if filename[0] == '1':
@@ -454,10 +400,6 @@ class DataInfo(bpy.types.Operator):
                         i_g6_2 = i_g6_2 + 1
                     if filename[0] == '3':
                         i_g6_3 = i_g6_3 + 1
-                    if filename[0] == '4':
-                        i_g6_4 = i_g6_4 + 1
-                    if filename[0] == '5':
-                        i_g6_5 = i_g6_5 + 1
                 elif filename[3] == '7':
                     g7 = g7 + 1
                     if filename[0] == '1':
@@ -466,10 +408,6 @@ class DataInfo(bpy.types.Operator):
                         i_g7_2 = i_g7_2 + 1
                     if filename[0] == '3':
                         i_g7_3 = i_g7_3 + 1
-                    if filename[0] == '4':
-                        i_g7_4 = i_g7_4 + 1
-                    if filename[0] == '5':
-                        i_g7_5 = i_g7_5 + 1
                 elif filename[3] == '8':
                     g8 = g8 + 1
                     if filename[0] == '1':
@@ -478,10 +416,6 @@ class DataInfo(bpy.types.Operator):
                         i_g8_2 = i_g8_2 + 1
                     if filename[0] == '3':
                         i_g8_3 = i_g8_3 + 1
-                    if filename[0] == '4':
-                        i_g8_4 = i_g8_4 + 1
-                    if filename[0] == '5':
-                        i_g8_5 = i_g8_5 + 1
                 elif filename[3] == '9':
                     g9 = g9 + 1
                     if filename[0] == '1':
@@ -490,10 +424,6 @@ class DataInfo(bpy.types.Operator):
                         i_g9_2 = i_g9_2 + 1
                     if filename[0] == '3':
                         i_g9_3 = i_g9_3 + 1
-                    if filename[0] == '4':
-                        i_g9_4 = i_g9_4 + 1
-                    if filename[0] == '5':
-                        i_g9_5 = i_g9_5 + 1
                 elif filename[3] == '0':
                     g10 = g10 + 1
                     if filename[0] == '1':
@@ -502,10 +432,6 @@ class DataInfo(bpy.types.Operator):
                         i_g10_2 = i_g10_2 + 1
                     if filename[0] == '3':
                         i_g10_3 = i_g10_3 + 1
-                    if filename[0] == '4':
-                        i_g10_4 = i_g10_4 + 1
-                    if filename[0] == '5':
-                        i_g10_5 = i_g10_5 + 1
             elif filename[5] == 'N':
                 if filename[3] == '1':
                     n1 = n1 + 1
@@ -515,10 +441,6 @@ class DataInfo(bpy.types.Operator):
                         i_n1_2 = i_n1_2 + 1
                     if filename[0] == '3':
                         i_n1_3 = i_n1_3 + 1
-                    if filename[0] == '4':
-                        i_n1_4 = i_n1_4 + 1
-                    if filename[0] == '5':
-                        i_n1_5 = i_n1_5 + 1
                 elif filename[3] == '2':
                     n2 = n2 + 1
                     if filename[0] == '1':
@@ -527,10 +449,6 @@ class DataInfo(bpy.types.Operator):
                         i_n2_2 = i_n2_2 + 1
                     if filename[0] == '3':
                         i_n2_3 = i_n2_3 + 1
-                    if filename[0] == '4':
-                        i_n2_4 = i_n2_4 + 1
-                    if filename[0] == '5':
-                        i_n2_5 = i_n2_5 + 1
                 elif filename[3] == '3':
                     n3 = n3 + 1
                     if filename[0] == '1':
@@ -539,10 +457,6 @@ class DataInfo(bpy.types.Operator):
                         i_n3_2 = i_n3_2 + 1
                     if filename[0] == '3':
                         i_n3_3 = i_n3_3 + 1
-                    if filename[0] == '4':
-                        i_n3_4 = i_n3_4 + 1
-                    if filename[0] == '5':
-                        i_n3_5 = i_n3_5 + 1
                 elif filename[3] == '4':
                     n4 = n4 + 1
                     if filename[0] == '1':
@@ -551,10 +465,6 @@ class DataInfo(bpy.types.Operator):
                         i_n4_2 = i_n4_2 + 1
                     if filename[0] == '3':
                         i_n4_3 = i_n4_3 + 1
-                    if filename[0] == '4':
-                        i_n4_4 = i_n4_4 + 1
-                    if filename[0] == '5':
-                        i_n4_5 = i_n4_5 + 1
                 elif filename[3] == '5':
                     n5 = n5 + 1
                     if filename[0] == '1':
@@ -563,10 +473,6 @@ class DataInfo(bpy.types.Operator):
                         i_n5_2 = i_n5_2 + 1
                     if filename[0] == '3':
                         i_n5_3 = i_n5_3 + 1
-                    if filename[0] == '4':
-                        i_n5_4 = i_n5_4 + 1
-                    if filename[0] == '5':
-                        i_n5_5 = i_n5_5 + 1
                 elif filename[3] == '6':
                     n6 = n6 + 1
                     if filename[0] == '1':
@@ -575,10 +481,6 @@ class DataInfo(bpy.types.Operator):
                         i_n6_2 = i_n6_2 + 1
                     if filename[0] == '3':
                         i_n6_3 = i_n6_3 + 1
-                    if filename[0] == '4':
-                        i_n6_4 = i_n6_4 + 1
-                    if filename[0] == '5':
-                        i_n6_5 = i_n6_5 + 1
                 elif filename[3] == '7':
                     n7 = n7 + 1
                     if filename[0] == '1':
@@ -587,10 +489,6 @@ class DataInfo(bpy.types.Operator):
                         i_n7_2 = i_n7_2 + 1
                     if filename[0] == '3':
                         i_n7_3 = i_n7_3 + 1
-                    if filename[0] == '4':
-                        i_n7_4 = i_n7_4 + 1
-                    if filename[0] == '5':
-                        i_n7_5 = i_n7_5 + 1
                 elif filename[3] == '8':
                     n8 = n8 + 1
                     if filename[0] == '1':
@@ -599,10 +497,6 @@ class DataInfo(bpy.types.Operator):
                         i_n8_2 = i_n8_2 + 1
                     if filename[0] == '3':
                         i_n8_3 = i_n8_3 + 1
-                    if filename[0] == '4':
-                        i_n8_4 = i_n8_4 + 1
-                    if filename[0] == '5':
-                        i_n8_5 = i_n8_5 + 1
                 elif filename[3] == '9':
                     n9 = n9 + 1
                     if filename[0] == '1':
@@ -611,10 +505,6 @@ class DataInfo(bpy.types.Operator):
                         i_n9_2 = i_n9_2 + 1
                     if filename[0] == '3':
                         i_n9_3 = i_n9_3 + 1
-                    if filename[0] == '4':
-                        i_n9_4 = i_n9_4 + 1
-                    if filename[0] == '5':
-                        i_n9_5 = i_n9_5 + 1
                 elif filename[3] == '0':
                     n10 = n10 + 1
                     if filename[0] == '1':
@@ -623,10 +513,6 @@ class DataInfo(bpy.types.Operator):
                         i_n10_2 = i_n10_2 + 1
                     if filename[0] == '3':
                         i_n10_3 = i_n10_3 + 1
-                    if filename[0] == '4':
-                        i_n10_4 = i_n10_4 + 1
-                    if filename[0] == '5':
-                        i_n10_5 = i_n10_5 + 1
                 
                 properties.info_Ground = str(g1) + " " + str(g2) + " " + str(g3) + " " + str(g4) + " " + str(g5) + " " + str(g6) + " " + str(g7) + " " + str(g8) + " " + str(g9) + " " + str(g10)
                 properties.info_noGround = str(n1) + " " + str(n2) + " " + str(n3) + " " + str(n4) + " " + str(n5) + " " + str(n6) + " " + str(n7) + " " + str(n8) + " " + str(n9) + " " + str(n10)
@@ -634,15 +520,11 @@ class DataInfo(bpy.types.Operator):
                 properties.info_n1 = str(i_n1_1) + " " + str(i_n2_1) + " " + str(i_n3_1) + " " + str(i_n4_1) + " " + str(i_n5_1) + " " + str(i_n6_1) + " " + str(i_n7_1) + " " + str(i_n8_1) + " " + str(i_n9_1) + " " + str(i_n10_1)
                 properties.info_n2 = str(i_n1_2) + " " + str(i_n2_2) + " " + str(i_n3_2) + " " + str(i_n4_2) + " " + str(i_n5_2) + " " + str(i_n6_2) + " " + str(i_n7_2) + " " + str(i_n8_2) + " " + str(i_n9_2) + " " + str(i_n10_2)
                 properties.info_n3 = str(i_n1_3) + " " + str(i_n2_3) + " " + str(i_n3_3) + " " + str(i_n4_3) + " " + str(i_n5_3) + " " + str(i_n6_3) + " " + str(i_n7_3) + " " + str(i_n8_3) + " " + str(i_n9_3) + " " + str(i_n10_3)
-                properties.info_n4 = str(i_n1_4) + " " + str(i_n2_4) + " " + str(i_n3_4) + " " + str(i_n4_4) + " " + str(i_n5_4) + " " + str(i_n6_4) + " " + str(i_n7_4) + " " + str(i_n8_4) + " " + str(i_n9_4) + " " + str(i_n10_4)
-                properties.info_n5 = str(i_n1_5) + " " + str(i_n2_5) + " " + str(i_n3_5) + " " + str(i_n4_5) + " " + str(i_n5_5) + " " + str(i_n6_5) + " " + str(i_n7_5) + " " + str(i_n8_5) + " " + str(i_n9_5) + " " + str(i_n10_5)
-        
+
                 properties.info_g1 = str(i_g1_1) + " " + str(i_g2_1) + " " + str(i_g3_1) + " " + str(i_g4_1) + " " + str(i_g5_1) + " " + str(i_g6_1) + " " + str(i_g7_1) + " " + str(i_g8_1) + " " + str(i_g9_1) + " " + str(i_g10_1)
                 properties.info_g2 = str(i_g1_2) + " " + str(i_g2_2) + " " + str(i_g3_2) + " " + str(i_g4_2) + " " + str(i_g5_2) + " " + str(i_g6_2) + " " + str(i_g7_2) + " " + str(i_g8_2) + " " + str(i_g9_2) + " " + str(i_g10_2)
                 properties.info_g3 = str(i_g1_3) + " " + str(i_g2_3) + " " + str(i_g3_3) + " " + str(i_g4_3) + " " + str(i_g5_3) + " " + str(i_g6_3) + " " + str(i_g7_3) + " " + str(i_g8_3) + " " + str(i_g9_3) + " " + str(i_g10_3)
-                properties.info_g4 = str(i_g1_4) + " " + str(i_g2_4) + " " + str(i_g3_4) + " " + str(i_g4_4) + " " + str(i_g5_4) + " " + str(i_g6_4) + " " + str(i_g7_4) + " " + str(i_g8_4) + " " + str(i_g9_4) + " " + str(i_g10_4)
-                properties.info_g5 = str(i_g1_5) + " " + str(i_g2_5) + " " + str(i_g3_5) + " " + str(i_g4_5) + " " + str(i_g5_5) + " " + str(i_g6_5) + " " + str(i_g7_5) + " " + str(i_g8_5) + " " + str(i_g9_5) + " " + str(i_g10_5)
-        
+
         return {'FINISHED'}
 
 class TrainNN(bpy.types.Operator):
@@ -681,8 +563,21 @@ class TrainNN(bpy.types.Operator):
         print (X.shape)
         print (y.shape)
         
-        y_cat=keras.utils.to_categorical(y, num_classes = 5)
+        y_cat=keras.utils.to_categorical(y, num_classes = 3)
         print(y_cat.shape)
+        
+        model = keras.models.Sequential()
+        
+        #model.add(keras.layers.Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(68,120,3)))
+        #model.add(keras.layers.Conv2D(64, (3, 3), activation='relu'))
+        #model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        #model.add(keras.layers.Dropout(0.25))
+        #model.add(keras.layers.Flatten())
+        #model.add(keras.layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
+        #model.add(keras.layers.Dropout(0.25))
+        #model.add(keras.layers.Dense(32, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
+        #model.add(keras.layers.Dropout(0.5))
+        
         
         model = keras.models.Sequential()
         model.add(keras.layers.Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(68,120,3)))
@@ -693,18 +588,22 @@ class TrainNN(bpy.types.Operator):
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
         model.add(keras.layers.Dropout(0.25))
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(64, activation='relu'))
+        model.add(keras.layers.Dense(256, activation='relu'))
         model.add(keras.layers.Dropout(0.5))
-        model.add(keras.layers.Dense(5, activation='softmax'))
+        model.add(keras.layers.Dense(3, activation='softmax'))
         
         model.summary()
 
+        #model.compile(loss='mean_squared_error',optimizer='Adam',metrics=['accuracy'])
         model.compile(loss='categorical_crossentropy',optimizer='Adam',metrics=['accuracy'])
         
         import sklearn.model_selection
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y_cat, random_state=42, test_size=0.1)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y_cat, random_state=42, test_size=0.2)
         
-        model.fit(X_train, y_train, epochs=properties.epochs, validation_data=(X_test, y_test))
+        #callback = [callbacks.EarlyStopping(monitor='accuracy', patience=5), LearningRateReducerCb()]
+        callback = [callbacks.EarlyStopping(monitor='accuracy', patience=5)]
+        
+        model.fit(X_train, y_train, epochs=properties.epochs, validation_data=(X_test, y_test), callbacks=callback)
         test_loss, test_acc = model.evaluate(X_test, y_test, verbose=2)
         
         print(test_acc)
@@ -818,29 +717,89 @@ class TrainPanel(bpy.types.Panel):
         box = layout.box()
         obj = context.object
         row = box.row()
-        row.prop(obj, "expanded",
-            icon="TRIA_DOWN" if obj.expanded else "TRIA_RIGHT",
-            icon_only=True, emboss=False, text = "Data Info"
-        )
-
-        if obj.expanded:
-            row.operator(DataInfo.bl_idname, text = "Refresh", icon="FILE_REFRESH")
+        
+        row.operator(DataInfo.bl_idname, text = "Refresh", icon="FILE_REFRESH")
+        row = box.row()
+        row.label(text=" ")
+        row.label(text="1")
+        row.label(text="2")
+        row.label(text="3")
+        row.label(text="4")
+        row.label(text="5")
+        row.label(text="6")
+        row.label(text="7")
+        row.label(text="8")
+        row.label(text="9")
+        row.label(text="10")
+        
+        row = box.row()
+        info = properties.info_noGround.split(' ')
+        row.label(text="N")
+        row.label(text=info[0])
+        row.label(text=info[1])
+        row.label(text=info[2])
+        row.label(text=info[3])
+        row.label(text=info[4])
+        row.label(text=info[5])
+        row.label(text=info[6])
+        row.label(text=info[7])
+        row.label(text=info[8])
+        row.label(text=info[9])
+        
+        for i in range(3):
             row = box.row()
-            row.label(text=" ")
-            row.label(text="1")
-            row.label(text="2")
-            row.label(text="3")
-            row.label(text="4")
-            row.label(text="5")
-            row.label(text="6")
-            row.label(text="7")
-            row.label(text="8")
-            row.label(text="9")
-            row.label(text="10")
-            
+            row.alert = True
+            if i == 0:
+                info = properties.info_n1.split(' ')
+            elif i == 1:
+                info = properties.info_n2.split(' ')
+            elif i == 2:
+                info = properties.info_n3.split(' ')
+            elif i == 3:
+                info = properties.info_n4.split(' ')
+            else:
+                info = properties.info_n5.split(' ')
+            row.label(text=str(i+1)+"|")
+            row.label(text=info[0])
+            row.label(text=info[1])
+            row.label(text=info[2])
+            row.label(text=info[3])
+            row.label(text=info[4])
+            row.label(text=info[5])
+            row.label(text=info[6])
+            row.label(text=info[7])
+            row.label(text=info[8])
+            row.label(text=info[9])
+        
+        
+        row = box.row()
+        info = properties.info_Ground.split(' ')
+        row.label(text="G")
+        row.label(text=info[0])
+        row.label(text=info[1])
+        row.label(text=info[2])
+        row.label(text=info[3])
+        row.label(text=info[4])
+        row.label(text=info[5])
+        row.label(text=info[6])
+        row.label(text=info[7])
+        row.label(text=info[8])
+        row.label(text=info[9])
+        
+        for i in range(3):
             row = box.row()
-            info = properties.info_noGround.split(' ')
-            row.label(text="N")
+            row.alert = True
+            if i == 0:
+                info = properties.info_g1.split(' ')
+            elif i == 1:
+                info = properties.info_g2.split(' ')
+            elif i == 2:
+                info = properties.info_g3.split(' ')
+            elif i == 3:
+                info = properties.info_g4.split(' ')
+            else:
+                info = properties.info_g5.split(' ')
+            row.label(text=str(i+1)+"|")
             row.label(text=info[0])
             row.label(text=info[1])
             row.label(text=info[2])
@@ -852,83 +811,18 @@ class TrainPanel(bpy.types.Panel):
             row.label(text=info[8])
             row.label(text=info[9])
             
-            for i in range(5):
-                row = box.row()
-                row.alert = True
-                if i == 0:
-                    info = properties.info_n1.split(' ')
-                elif i == 1:
-                    info = properties.info_n2.split(' ')
-                elif i == 2:
-                    info = properties.info_n3.split(' ')
-                elif i == 3:
-                    info = properties.info_n4.split(' ')
-                else:
-                    info = properties.info_n5.split(' ')
-                row.label(text=str(i+1)+"|")
-                row.label(text=info[0])
-                row.label(text=info[1])
-                row.label(text=info[2])
-                row.label(text=info[3])
-                row.label(text=info[4])
-                row.label(text=info[5])
-                row.label(text=info[6])
-                row.label(text=info[7])
-                row.label(text=info[8])
-                row.label(text=info[9])
-            
-            
-            row = box.row()
-            info = properties.info_Ground.split(' ')
-            row.label(text="G")
-            row.label(text=info[0])
-            row.label(text=info[1])
-            row.label(text=info[2])
-            row.label(text=info[3])
-            row.label(text=info[4])
-            row.label(text=info[5])
-            row.label(text=info[6])
-            row.label(text=info[7])
-            row.label(text=info[8])
-            row.label(text=info[9])
-            
-            for i in range(5):
-                row = box.row()
-                row.alert = True
-                if i == 0:
-                    info = properties.info_g1.split(' ')
-                elif i == 1:
-                    info = properties.info_g2.split(' ')
-                elif i == 2:
-                    info = properties.info_g3.split(' ')
-                elif i == 3:
-                    info = properties.info_g4.split(' ')
-                else:
-                    info = properties.info_g5.split(' ')
-                row.label(text=str(i+1)+"|")
-                row.label(text=info[0])
-                row.label(text=info[1])
-                row.label(text=info[2])
-                row.label(text=info[3])
-                row.label(text=info[4])
-                row.label(text=info[5])
-                row.label(text=info[6])
-                row.label(text=info[7])
-                row.label(text=info[8])
-                row.label(text=info[9])
-                
-            row = box.row()
-            row.label(text=" ")
-            row.label(text="1")
-            row.label(text="2")
-            row.label(text="3")
-            row.label(text="4")
-            row.label(text="5")
-            row.label(text="6")
-            row.label(text="7")
-            row.label(text="8")
-            row.label(text="9")
-            row.label(text="10")
+        row = box.row()
+        row.label(text=" ")
+        row.label(text="1")
+        row.label(text="2")
+        row.label(text="3")
+        row.label(text="4")
+        row.label(text="5")
+        row.label(text="6")
+        row.label(text="7")
+        row.label(text="8")
+        row.label(text="9")
+        row.label(text="10")
             
         row = layout.row()
         row.prop(properties, 'filepath_export', text="")
@@ -976,7 +870,6 @@ def register():
     for cls in classes:
         register_class(cls)
     
-    bpy.types.Object.expanded = bpy.props.BoolProperty(default=True)
     bpy.types.Scene.custom_properties = PointerProperty(type=Properties)
     
 
@@ -986,7 +879,6 @@ def unregister():
         unregister_class(cls)
     
     del bpy.types.Scene.custom_properties
-    del bpy.types.Object.expanded
     
     
 if __name__ == "__main__":
