@@ -92,37 +92,37 @@ class Properties(PropertyGroup):
     
     info_noGround: StringProperty(
         name =  "info_noground",
-        default = "0 0 0 0 0 0 0 0 0 0"
+        default = "0 0 0 0 0 0"
     )
     
     info_Ground: StringProperty(
         name =  "info_ground",
-        default = "0 0 0 0 0 0 0 0 0 0"
+        default = "0 0 0 0 0 0"
     )
     
     info_n1: StringProperty(
         name = "info_n1",
-        default = "1| 0   0   0   0   0   0   0   0   0  0"
+        default = "1| 0   0   0   0   0   0"
     )
     info_n2: StringProperty(
         name = "info_n2",
-        default = "2| 0   0   0   0   0   0   0   0   0  0"
+        default = "2| 0   0   0   0   0   0"
     )
     info_n3: StringProperty(
         name = "info_n3",
-        default = "3| 0   0   0   0   0   0   0   0   0  0"
+        default = "3| 0   0   0   0   0   0"
     )
     info_g1: StringProperty(
         name = "info_g1",
-        default = "1| 0   0   0   0   0   0   0   0   0  0"
+        default = "1| 0   0   0   0   0   0"
     )
     info_g2: StringProperty(
         name = "info_g2",
-        default = "2| 0   0   0   0   0   0   0   0   0  0"
+        default = "2| 0   0   0   0   0   0"
     )
     info_g3: StringProperty(
         name = "info_g3",
-        default = "3| 0   0   0   0   0   0   0   0   0  0"
+        default = "3| 0   0   0   0   0   0"
     )
         
     filepath_export: StringProperty(
@@ -339,16 +339,16 @@ class DataInfo(bpy.types.Operator):
             return{'CANCELLED'}
         
         #counters
-        n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = n10 = 0
-        g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = g10 = 0
+        n1 = n2 = n3 = n4 = n5 = n6 = 0
+        g1 = g2 = g3 = g4 = g5 = g6 = 0
         
-        i_n1_1 = i_n2_1 = i_n3_1 = i_n4_1 = i_n5_1 = i_n6_1 = i_n7_1 = i_n8_1 = i_n9_1 = i_n10_1 = 0
-        i_n1_2 = i_n2_2 = i_n3_2 = i_n4_2 = i_n5_2 = i_n6_2 = i_n7_2 = i_n8_2 = i_n9_2 = i_n10_2 = 0
-        i_n1_3 = i_n2_3 = i_n3_3 = i_n4_3 = i_n5_3 = i_n6_3 = i_n7_3 = i_n8_3 = i_n9_3 = i_n10_3 = 0
+        i_n1_1 = i_n2_1 = i_n3_1 = i_n4_1 = i_n5_1 = i_n6_1 = 0
+        i_n1_2 = i_n2_2 = i_n3_2 = i_n4_2 = i_n5_2 = i_n6_2 = 0
+        i_n1_3 = i_n2_3 = i_n3_3 = i_n4_3 = i_n5_3 = i_n6_3 = 0
         
-        i_g1_1 = i_g2_1 = i_g3_1 = i_g4_1 = i_g5_1 = i_g6_1 = i_g7_1 = i_g8_1 = i_g9_1 = i_g10_1 = 0
-        i_g1_2 = i_g2_2 = i_g3_2 = i_g4_2 = i_g5_2 = i_g6_2 = i_g7_2 = i_g8_2 = i_g9_2 = i_g10_2 = 0
-        i_g1_3 = i_g2_3 = i_g3_3 = i_g4_3 = i_g5_3 = i_g6_3 = i_g7_3 = i_g8_3 = i_g9_3 = i_g10_3 = 0
+        i_g1_1 = i_g2_1 = i_g3_1 = i_g4_1 = i_g5_1 = i_g6_1 = 0
+        i_g1_2 = i_g2_2 = i_g3_2 = i_g4_2 = i_g5_2 = i_g6_2 = 0
+        i_g1_3 = i_g2_3 = i_g3_3 = i_g4_3 = i_g5_3 = i_g6_3 = 0
         
         for filename in os.listdir(bpy.path.abspath(properties.filepath_train)):
             if filename[5] == 'G':
@@ -400,38 +400,6 @@ class DataInfo(bpy.types.Operator):
                         i_g6_2 = i_g6_2 + 1
                     if filename[0] == '3':
                         i_g6_3 = i_g6_3 + 1
-                elif filename[3] == '7':
-                    g7 = g7 + 1
-                    if filename[0] == '1':
-                        i_g7_1 = i_g7_1 + 1
-                    if filename[0] == '2':
-                        i_g7_2 = i_g7_2 + 1
-                    if filename[0] == '3':
-                        i_g7_3 = i_g7_3 + 1
-                elif filename[3] == '8':
-                    g8 = g8 + 1
-                    if filename[0] == '1':
-                        i_g8_1 = i_g8_1 + 1
-                    if filename[0] == '2':
-                        i_g8_2 = i_g8_2 + 1
-                    if filename[0] == '3':
-                        i_g8_3 = i_g8_3 + 1
-                elif filename[3] == '9':
-                    g9 = g9 + 1
-                    if filename[0] == '1':
-                        i_g9_1 = i_g9_1 + 1
-                    if filename[0] == '2':
-                        i_g9_2 = i_g9_2 + 1
-                    if filename[0] == '3':
-                        i_g9_3 = i_g9_3 + 1
-                elif filename[3] == '0':
-                    g10 = g10 + 1
-                    if filename[0] == '1':
-                        i_g10_1 = i_g10_1 + 1
-                    if filename[0] == '2':
-                        i_g10_2 = i_g10_2 + 1
-                    if filename[0] == '3':
-                        i_g10_3 = i_g10_3 + 1
             elif filename[5] == 'N':
                 if filename[3] == '1':
                     n1 = n1 + 1
@@ -481,49 +449,17 @@ class DataInfo(bpy.types.Operator):
                         i_n6_2 = i_n6_2 + 1
                     if filename[0] == '3':
                         i_n6_3 = i_n6_3 + 1
-                elif filename[3] == '7':
-                    n7 = n7 + 1
-                    if filename[0] == '1':
-                        i_n7_1 = i_n7_1 + 1
-                    if filename[0] == '2':
-                        i_n7_2 = i_n7_2 + 1
-                    if filename[0] == '3':
-                        i_n7_3 = i_n7_3 + 1
-                elif filename[3] == '8':
-                    n8 = n8 + 1
-                    if filename[0] == '1':
-                        i_n8_1 = i_n8_1 + 1
-                    if filename[0] == '2':
-                        i_n8_2 = i_n8_2 + 1
-                    if filename[0] == '3':
-                        i_n8_3 = i_n8_3 + 1
-                elif filename[3] == '9':
-                    n9 = n9 + 1
-                    if filename[0] == '1':
-                        i_n9_1 = i_n9_1 + 1
-                    if filename[0] == '2':
-                        i_n9_2 = i_n9_2 + 1
-                    if filename[0] == '3':
-                        i_n9_3 = i_n9_3 + 1
-                elif filename[3] == '0':
-                    n10 = n10 + 1
-                    if filename[0] == '1':
-                        i_n10_1 = i_n10_1 + 1
-                    if filename[0] == '2':
-                        i_n10_2 = i_n10_2 + 1
-                    if filename[0] == '3':
-                        i_n10_3 = i_n10_3 + 1
                 
-                properties.info_Ground = str(g1) + " " + str(g2) + " " + str(g3) + " " + str(g4) + " " + str(g5) + " " + str(g6) + " " + str(g7) + " " + str(g8) + " " + str(g9) + " " + str(g10)
-                properties.info_noGround = str(n1) + " " + str(n2) + " " + str(n3) + " " + str(n4) + " " + str(n5) + " " + str(n6) + " " + str(n7) + " " + str(n8) + " " + str(n9) + " " + str(n10)
+                properties.info_Ground = str(g1) + " " + str(g2) + " " + str(g3) + " " + str(g4) + " " + str(g5) + " " + str(g6)
+                properties.info_noGround = str(n1) + " " + str(n2) + " " + str(n3) + " " + str(n4) + " " + str(n5) + " " + str(n6)
                 
-                properties.info_n1 = str(i_n1_1) + " " + str(i_n2_1) + " " + str(i_n3_1) + " " + str(i_n4_1) + " " + str(i_n5_1) + " " + str(i_n6_1) + " " + str(i_n7_1) + " " + str(i_n8_1) + " " + str(i_n9_1) + " " + str(i_n10_1)
-                properties.info_n2 = str(i_n1_2) + " " + str(i_n2_2) + " " + str(i_n3_2) + " " + str(i_n4_2) + " " + str(i_n5_2) + " " + str(i_n6_2) + " " + str(i_n7_2) + " " + str(i_n8_2) + " " + str(i_n9_2) + " " + str(i_n10_2)
-                properties.info_n3 = str(i_n1_3) + " " + str(i_n2_3) + " " + str(i_n3_3) + " " + str(i_n4_3) + " " + str(i_n5_3) + " " + str(i_n6_3) + " " + str(i_n7_3) + " " + str(i_n8_3) + " " + str(i_n9_3) + " " + str(i_n10_3)
+                properties.info_n1 = str(i_n1_1) + " " + str(i_n2_1) + " " + str(i_n3_1) + " " + str(i_n4_1) + " " + str(i_n5_1) + " " + str(i_n6_1)
+                properties.info_n2 = str(i_n1_2) + " " + str(i_n2_2) + " " + str(i_n3_2) + " " + str(i_n4_2) + " " + str(i_n5_2) + " " + str(i_n6_2)
+                properties.info_n3 = str(i_n1_3) + " " + str(i_n2_3) + " " + str(i_n3_3) + " " + str(i_n4_3) + " " + str(i_n5_3) + " " + str(i_n6_3)
 
-                properties.info_g1 = str(i_g1_1) + " " + str(i_g2_1) + " " + str(i_g3_1) + " " + str(i_g4_1) + " " + str(i_g5_1) + " " + str(i_g6_1) + " " + str(i_g7_1) + " " + str(i_g8_1) + " " + str(i_g9_1) + " " + str(i_g10_1)
-                properties.info_g2 = str(i_g1_2) + " " + str(i_g2_2) + " " + str(i_g3_2) + " " + str(i_g4_2) + " " + str(i_g5_2) + " " + str(i_g6_2) + " " + str(i_g7_2) + " " + str(i_g8_2) + " " + str(i_g9_2) + " " + str(i_g10_2)
-                properties.info_g3 = str(i_g1_3) + " " + str(i_g2_3) + " " + str(i_g3_3) + " " + str(i_g4_3) + " " + str(i_g5_3) + " " + str(i_g6_3) + " " + str(i_g7_3) + " " + str(i_g8_3) + " " + str(i_g9_3) + " " + str(i_g10_3)
+                properties.info_g1 = str(i_g1_1) + " " + str(i_g2_1) + " " + str(i_g3_1) + " " + str(i_g4_1) + " " + str(i_g5_1) + " " + str(i_g6_1)
+                properties.info_g2 = str(i_g1_2) + " " + str(i_g2_2) + " " + str(i_g3_2) + " " + str(i_g4_2) + " " + str(i_g5_2) + " " + str(i_g6_2)
+                properties.info_g3 = str(i_g1_3) + " " + str(i_g2_3) + " " + str(i_g3_3) + " " + str(i_g4_3) + " " + str(i_g5_3) + " " + str(i_g6_3)
 
         return {'FINISHED'}
 
@@ -568,17 +504,6 @@ class TrainNN(bpy.types.Operator):
         
         model = keras.models.Sequential()
         
-        #model.add(keras.layers.Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(68,120,3)))
-        #model.add(keras.layers.Conv2D(64, (3, 3), activation='relu'))
-        #model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
-        #model.add(keras.layers.Dropout(0.25))
-        #model.add(keras.layers.Flatten())
-        #model.add(keras.layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
-        #model.add(keras.layers.Dropout(0.25))
-        #model.add(keras.layers.Dense(32, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
-        #model.add(keras.layers.Dropout(0.5))
-        
-        
         model = keras.models.Sequential()
         model.add(keras.layers.Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(68,120,3)))
         model.add(keras.layers.Conv2D(64, (3, 3), activation='relu'))
@@ -588,8 +513,10 @@ class TrainNN(bpy.types.Operator):
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
         model.add(keras.layers.Dropout(0.25))
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(256, activation='relu'))
-        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
+        model.add(keras.layers.Dropout(0.45))
+        model.add(keras.layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)))
+        model.add(keras.layers.Dropout(0.45))
         model.add(keras.layers.Dense(3, activation='softmax'))
         
         model.summary()
@@ -727,10 +654,6 @@ class TrainPanel(bpy.types.Panel):
         row.label(text="4")
         row.label(text="5")
         row.label(text="6")
-        row.label(text="7")
-        row.label(text="8")
-        row.label(text="9")
-        row.label(text="10")
         
         row = box.row()
         info = properties.info_noGround.split(' ')
@@ -741,10 +664,6 @@ class TrainPanel(bpy.types.Panel):
         row.label(text=info[3])
         row.label(text=info[4])
         row.label(text=info[5])
-        row.label(text=info[6])
-        row.label(text=info[7])
-        row.label(text=info[8])
-        row.label(text=info[9])
         
         for i in range(3):
             row = box.row()
@@ -766,10 +685,6 @@ class TrainPanel(bpy.types.Panel):
             row.label(text=info[3])
             row.label(text=info[4])
             row.label(text=info[5])
-            row.label(text=info[6])
-            row.label(text=info[7])
-            row.label(text=info[8])
-            row.label(text=info[9])
         
         
         row = box.row()
@@ -781,10 +696,6 @@ class TrainPanel(bpy.types.Panel):
         row.label(text=info[3])
         row.label(text=info[4])
         row.label(text=info[5])
-        row.label(text=info[6])
-        row.label(text=info[7])
-        row.label(text=info[8])
-        row.label(text=info[9])
         
         for i in range(3):
             row = box.row()
@@ -806,10 +717,6 @@ class TrainPanel(bpy.types.Panel):
             row.label(text=info[3])
             row.label(text=info[4])
             row.label(text=info[5])
-            row.label(text=info[6])
-            row.label(text=info[7])
-            row.label(text=info[8])
-            row.label(text=info[9])
             
         row = box.row()
         row.label(text=" ")
@@ -819,10 +726,6 @@ class TrainPanel(bpy.types.Panel):
         row.label(text="4")
         row.label(text="5")
         row.label(text="6")
-        row.label(text="7")
-        row.label(text="8")
-        row.label(text="9")
-        row.label(text="10")
             
         row = layout.row()
         row.prop(properties, 'filepath_export', text="")
