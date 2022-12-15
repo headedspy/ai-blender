@@ -152,6 +152,20 @@ class Properties(PropertyGroup):
         default = 1
     )
     
+    rating_bar1: StringProperty(
+        name = "Rating 1",
+        default = "1 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
+    )
+    
+    rating_bar2: StringProperty(
+        name = "Rating 2",
+        default = "2 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
+    )
+    
+    rating_bar3: StringProperty(
+        name = "Rating 3",
+        default = "3 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
+    )
 
 class Constants():
     #minimal distance from camera
@@ -575,12 +589,22 @@ class UseNN(bpy.types.Operator):
         prediction = probability_model(img)
         rating = np.argmax(prediction[0], axis=0) + 1
         print(prediction)
+        print(prediction[0][0] < 0.5)
         properties.comp_rating = rating
         
         # delete temp
         os.remove("C:/image.png")
         
         keras.backend.clear_session()
+        
+        #calculate progress bars
+        amount_1 = int((round(float(prediction[0][0]),1)*2) * 10)
+        amount_2 = int((round(float(prediction[0][1]),1)*2) * 10)
+        amount_3 = int((round(float(prediction[0][2]),1)*2) * 10)
+        
+        properties.rating_bar1 = "1| " + amount_1*"▓" + (20-amount_1)*"▒" + " " + str(round(float(prediction[0][0]), 5))
+        properties.rating_bar2 = "2| " + amount_2*"▓" + (20-amount_2)*"▒" + " " + str(round(float(prediction[0][1]), 5))
+        properties.rating_bar3 = "3| " + amount_3*"▓" + (20-amount_3)*"▒" + " " + str(round(float(prediction[0][2]), 5))
         
         return {'FINISHED'}
 
@@ -751,6 +775,15 @@ class EvaluatePanel(bpy.types.Panel):
         row.operator(UseNN.bl_idname, text = "Evaluate", icon="TRACKER_DATA")
         row = layout.row()
         row.label(text="Compositional Rating: " + str(properties.comp_rating))
+        
+        row = layout.row()
+        box = layout.box()
+        row = box.row()
+        row.label(text = properties.rating_bar1)
+        row = box.row()
+        row.label(text = properties.rating_bar2)
+        row = box.row()
+        row.label(text = properties.rating_bar3)
         
 # ------------------------------------------------------------------------
 #     Registration
