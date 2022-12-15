@@ -1,13 +1,14 @@
 # AI-assisted tool for evaluating aesthetic and composition quality of blender 3D scenes
 Personal project for the AI & Society minor by Vladimir Vladinov
-![image](https://user-images.githubusercontent.com/22458048/205689809-e70fc80d-de00-4605-9bf2-ae8980aa1454.png)
+
+![image](https://user-images.githubusercontent.com/22458048/207861546-e37c689a-f9bd-43b1-8816-2f380c585489.png)
 
 
 
 ## Generating training data
 With the add-on you can create your own random labelled data to train the algorithm on. This can be done with the "Generate" sub-menu
 
-![image](https://user-images.githubusercontent.com/22458048/196052012-24b89356-766d-433f-9862-cda2ee828d49.png)
+![image](https://user-images.githubusercontent.com/22458048/207861805-23ac9a5f-048d-4ee0-91e7-0220969b3226.png)
 
 | Icon  | Name | Description |
 | ------------- | ------------- | ------------- |
@@ -16,7 +17,7 @@ With the add-on you can create your own random labelled data to train the algori
 | ![image](https://user-images.githubusercontent.com/22458048/196052160-4eb9e4b0-68f3-4c18-acc2-fd6265ae13be.png) | Ground generation | Toggle the generation of a ground plane |
 | ![image](https://user-images.githubusercontent.com/22458048/196052243-ce911060-2aad-481b-aec7-b9dc4f52aa7d.png) | Generate scene | Generate the scene with the given parameters |
 | ![image](https://user-images.githubusercontent.com/22458048/196052276-9fab8a9f-6891-4a61-bb82-568ac0afd41e.png) | Ground bias | Amount of objects to be placed on the ground, if the button is toggled the value is randomized for every scene |
-| ![image](https://user-images.githubusercontent.com/22458048/196052397-ba14b3e3-9bda-468f-8748-891bca433168.png) | Rating | Rate the generated scene on a 1-5 scale |
+| ![image](https://user-images.githubusercontent.com/22458048/207861662-9b7426f1-f1dc-4c59-8298-04555c58b129.png) | Rating | Rate the generated scene on a 1-3 scale |
 | ![image](https://user-images.githubusercontent.com/22458048/196052426-d3446dda-5e13-4ef8-ae13-1a6013a184e9.png) | Render | Render the scene and save it with an appropriate name, which includes the rating, amount of objets and whether a ground plane is present |
 | ![image](https://user-images.githubusercontent.com/22458048/196052479-f2e48e60-a4ef-431c-b231-d9b8571181fd.png) | Ouput Path | Folder for saving the generated frames |
 
@@ -31,7 +32,7 @@ Examples of images generated:
 - Start by setting the number of objects to 1 without ground plane
 - Set the path to point to a newly-created folder in your project's location
 - Click "Generate"
-- Rate the composition by pressing one of the buttons from 1 to 5
+- Rate the composition by pressing one of the buttons from 1 to 3
 - Click Save
 - Repeat until you have at least 10 images of every rating
 - Increase the number of objects and repeat
@@ -42,13 +43,13 @@ Or if you don't feel like generating thousands of images you can always use the 
 ## Training on the generated data
 The "Train" sub-menu allows you to use previously generated labelled data to train the AI and generate a model, which can be exported and used later
 
-![image](https://user-images.githubusercontent.com/22458048/205506592-d482187e-47a2-4aa9-851d-6e4d341eecaa.png)
+![image](https://user-images.githubusercontent.com/22458048/207862044-03adf23f-5cea-4d89-a2a7-d20c7d5456d0.png)
 | Icon  | Name | Description |
 | ------------- | ------------- | ------------- |
 |![image](https://user-images.githubusercontent.com/22458048/205506897-628d3472-cba3-4a0e-bc0d-b2d82fc042b9.png)|Data directory| The directory containing the labelled data. This folder should contain only the images, which will be used to train the AI. All images must have the same resolution (currently a fixed value of 120x68) and their name must match the exported format (Example: 3_07_G.6b943270-7fe4-4be5-a7cd-29fbf2722ca6; 3 is the rating of the image; 07 is the number of objects in the image; G means the image has a ground plane, if the image doesn't have ground this letter should be N; UUIDv4 string generated using the image)|
-|![image](https://user-images.githubusercontent.com/22458048/205506927-9389e19d-fb2c-42a8-b962-269fbf927c72.png)|Data Information|A matrix, displaying the number of images for each combination of rating-number of objects-ground plane present. The red rows are the ratings given, while the columns are the number of objects. The first matrix contains all images without ground plane present, while the secon one shows the ones with ground. The N and G rows are the total number of images in the corresponding group of number of objects. For example in this screenshot there are 176 images, which contain 1 object with no ground plane. Out of those 26 are rated with 1, 50 are rated with 2, 52 have the score 3 and so on. The refresh button should be used every time we made an adjustment to the number of images, either by generating new or by deleting some.|
+|![image](https://user-images.githubusercontent.com/22458048/207862124-e32b103f-686b-488b-9c65-71c2b15fb12a.png)|Data Information|A matrix, displaying the number of images for each combination of rating-number of objects-ground plane present. The red rows are the ratings given, while the columns are the number of objects. The first matrix contains all images without ground plane present, while the secon one shows the ones with ground. The N and G rows are the total number of images in the corresponding group of number of objects. For example in this screenshot there are 176 images, which contain 1 object with no ground plane. Out of those 26 are rated with 1, 50 are rated with 2, 52 have the score 3 and so on. The refresh button should be used every time we made an adjustment to the number of images, either by generating new or by deleting some.|
 |![image](https://user-images.githubusercontent.com/22458048/205507236-d3529ac2-58b7-436c-b5d0-4d4c83def3ac.png) |Export location|Where should the trained model be exported to.|
-|![image](https://user-images.githubusercontent.com/22458048/205507282-6e4753b4-14ef-423b-8b65-4be8f6e1aa0e.png)|Number of epochs to train for|How many epochs to train the model for before it is exported|
+|![image](https://user-images.githubusercontent.com/22458048/207862151-ecca6868-7598-4a0f-89f0-5609ff296638.png)|Number of epochs to train for|How many epochs to train the model for before it is exported|
 |![image](https://user-images.githubusercontent.com/22458048/205507304-8c0cd9b1-033c-465a-a30b-75383acef1c6.png)|Train and Export|Train the model on the given data and export it to the given location. The model's name will be the final accuracy with the .md5 extention|
 
 ### Step by step usage
@@ -57,7 +58,7 @@ The "Train" sub-menu allows you to use previously generated labelled data to tra
 - There should be at least 10 images in each category and they should be (mostly) evenly distributed
 - If needed generate more data from the "Generate" sub-menu
 - Select the export location to save the model to
-- Choose the number of epochs to train for (~20 seems to do the trick)
+- Choose the number of epochs to train for (~25 seems to do the trick)
 - Open blender's terminal window by going to Window->Toggle System Console
 - Click on train and Export
 - Keep track of the training progress in the terminal window
@@ -65,9 +66,10 @@ The "Train" sub-menu allows you to use previously generated labelled data to tra
 ## Evaluating the scene
 The "Evaluate" sub-menu can be used to evaluate the compositional integrity of your scene using a pre-trained model.
 
-![image](https://user-images.githubusercontent.com/22458048/205688983-f76ccf01-83bb-414b-8ece-8d7125249c1e.png)
+![image](https://user-images.githubusercontent.com/22458048/207862274-68bc7d35-696b-4b37-991a-d9834babf862.png)
 | Icon  | Name | Description |
 | ------------- | ------------- | ------------- |
 |![image](https://user-images.githubusercontent.com/22458048/205689077-d6bde3ef-182a-4eae-85bb-99d65095dc47.png)|Trained model path|Path to the model to be used for evaluating the scene|
 |![image](https://user-images.githubusercontent.com/22458048/205689219-852c1728-bdac-4fd2-857c-46f929949cb1.png)|Evaluate|Feed the viewport camera's view of the scene into the model and output the predicted composition rating|
 |![image](https://user-images.githubusercontent.com/22458048/205689400-224f4787-49f5-4353-b9ae-f556e58ffb45.png)|Rating|The rating of the scene given by the AI|
+|![image](https://user-images.githubusercontent.com/22458048/207862341-9d8bb3a9-170f-4783-b980-c75f0f8d27c8.png)|Confidence|The confidence in evaluating the scene for every rating|
