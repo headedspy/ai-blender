@@ -22,20 +22,47 @@ import numpy as np
 from tensorflow import keras
 import sklearn
 
-
-
 from tensorflow.keras import regularizers
 from tensorflow.keras import callbacks
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
 
-class LearningRateReducerCb(callbacks.Callback):
+def rgb_to_hsv(arr):
+    arr = np.asarray(arr)
 
-  def on_epoch_end(self, epoch, logs={}):
-    old_lr = self.model.optimizer.lr.read_value()
-    new_lr = old_lr * 0.99
-    print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
-    self.model.optimizer.lr.assign(new_lr)
+    # check length of the last dimension, should be _some_ sort of rgb
+    if arr.shape[-1] != 3:
+        raise ValueError("Last dimension of input array must be 3; "
+                         "shape {} was found.".format(arr.shape))
+
+    in_shape = arr.shape
+    arr = np.array(
+        arr, copy=False,
+        dtype=np.promote_types(arr.dtype, np.float32),  # Don't work on ints.
+        ndmin=2,  # In case input was 1D.
+    )
+    out = np.zeros_like(arr)
+    arr_max = arr.max(-1)
+    ipos = arr_max > 0
+    delta = arr.ptp(-1)
+    s = np.zeros_like(delta)
+    s[ipos] = delta[ipos] / arr_max[ipos]
+    ipos = delta > 0
+    # red is max
+    idx = (arr[..., 0] == arr_max) & ipos
+    out[idx, 0] = (arr[idx, 1] - arr[idx, 2]) / delta[idx]
+    # green is max
+    idx = (arr[..., 1] == arr_max) & ipos
+    out[idx, 0] = 2. + (arr[idx, 2] - arr[idx, 0]) / delta[idx]
+    # blue is max
+    idx = (arr[..., 2] == arr_max) & ipos
+    out[idx, 0] = 4. + (arr[idx, 0] - arr[idx, 1]) / delta[idx]
+
+    out[..., 0] = (out[..., 0] / 6.0) % 1.0
+    out[..., 1] = s
+    out[..., 2] = arr_max
+
+    return out.reshape(in_shape)
 
 # Properties storage
 class Properties(PropertyGroup):
@@ -50,7 +77,7 @@ class Properties(PropertyGroup):
         description="Number of objects",
         default = 1,
         min = 1,
-        max = 10
+        max = 6
     )
     
     groundBias: FloatProperty(
@@ -165,6 +192,55 @@ class Properties(PropertyGroup):
     rating_bar3: StringProperty(
         name = "Rating 3",
         default = "3 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
+    )
+    
+    color_1: StringProperty(
+        name = "Color 1",
+        default = ""
+    )
+    color_2: StringProperty(
+        name = "Color 2",
+        default = ""
+    )
+    color_3: StringProperty(
+        name = "Color 3",
+        default = ""
+    )
+    color_4: StringProperty(
+        name = "Color 4",
+        default = ""
+    )
+    color_5: StringProperty(
+        name = "Color 5",
+        default = ""
+    )
+    color_6: StringProperty(
+        name = "Color 6",
+        default = ""
+    )
+    color_7: StringProperty(
+        name = "Color 7",
+        default = ""
+    )
+    color_8: StringProperty(
+        name = "Color 8",
+        default = ""
+    )
+    color_9: StringProperty(
+        name = "Color 9",
+        default = ""
+    )
+    color_10: StringProperty(
+        name = "Color 10",
+        default = ""
+    )
+    color_11: StringProperty(
+        name = "Color 11",
+        default = ""
+    )
+    color_12: StringProperty(
+        name = "Color 12",
+        default = ""
     )
 
 class Constants():
@@ -608,6 +684,88 @@ class UseNN(bpy.types.Operator):
         
         return {'FINISHED'}
 
+class ColorStats(bpy.types.Operator):
+    bl_idname = "wm.color"
+    bl_label = "a"
+    
+    def execute(self, context):
+        scene = context.scene
+        properties = scene.custom_properties
+        
+        # turn off overlays
+        bpy.context.space_data.overlay.show_overlays = False
+        bpy.context.space_data.shading.type = 'MATERIAL'
+        bpy.context.space_data.shading.use_scene_world = False
+        bpy.context.space_data.shading.use_scene_lights = False
+        
+        #render viewport
+        sce = bpy.context.scene.name
+        bpy.ops.render.opengl(write_still=True)
+        bpy.data.images["Render Result"].save_render("C:\image.png")
+        
+        image_cv2 = cv2.imread("C:\image.png")
+        
+        #scale down image
+        scale_percent = 90 # percent of original size
+        width = int(image_cv2.shape[1] * scale_percent / 100)
+        height = int(image_cv2.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        resized_img = cv2.resize(image_cv2, dim, interpolation = cv2.INTER_AREA)
+        
+        #[bgr] -> [rgb]
+        resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+        
+        rows,cols,_ = resized_img.shape
+        
+        hsv_palette = rgb_to_hsv(np.array(resized_img)/255)
+        
+        hues_12 = np.zeros(12)
+        
+        for i in range(rows):
+            for ii in range(cols):
+                #print(hsv_palette)
+                pix_hue = int(hsv_palette[i,ii][0]*360)
+                hues_12[int(pix_hue/30)] += 1
+        
+        #generate bars
+        len_bar = 30
+        print(hues_12)
+        print(hues_12/(width*height))
+        print(hues_12/(width*height)*len_bar)
+        
+        properties.color_1 = "▓"*int(hues_12[0]/(width*height)*len_bar)
+        properties.color_1 += ((len_bar - (len(properties.color_1)))*'▒')
+        properties.color_2 = "▓"*int(hues_12[1]/(width*height)*len_bar)
+        properties.color_2 += ((len_bar - (len(properties.color_2)))*'▒')
+        properties.color_3 = "▓"*int(hues_12[2]/(width*height)*len_bar)
+        properties.color_3 += ((len_bar - (len(properties.color_3)))*'▒')
+        properties.color_4 = "▓"*int(hues_12[3]/(width*height)*len_bar)
+        properties.color_4 += ((len_bar - (len(properties.color_4)))*'▒')
+        properties.color_5 = "▓"*int(hues_12[4]/(width*height)*len_bar)
+        properties.color_5 += ((len_bar - (len(properties.color_5)))*'▒')
+        properties.color_6 = "▓"*int(hues_12[5]/(width*height)*len_bar)
+        properties.color_6 += ((len_bar - (len(properties.color_6)))*'▒')
+        properties.color_7 = "▓"*int(hues_12[6]/(width*height)*len_bar)
+        properties.color_7 += ((len_bar - (len(properties.color_7)))*'▒')
+        properties.color_8 = "▓"*int(hues_12[7]/(width*height)*len_bar)
+        properties.color_8 += ((len_bar - (len(properties.color_8)))*'▒')
+        properties.color_9 = "▓"*int(hues_12[8]/(width*height)*len_bar)
+        properties.color_9 += ((len_bar - (len(properties.color_9)))*'▒')
+        properties.color_10 = "▓"*int(hues_12[9]/(width*height)*len_bar)
+        properties.color_10 += ((len_bar - (len(properties.color_10)))*'▒')
+        properties.color_11 = "▓"*int(hues_12[10]/(width*height)*len_bar)
+        properties.color_11 += ((len_bar - (len(properties.color_11)))*'▒')
+        properties.color_12 = "▓"*int(hues_12[11]/(width*height)*len_bar)
+        properties.color_12 += ((len_bar - (len(properties.color_12)))*'▒')
+        
+        # delete temp
+        os.remove("C:/image.png")
+        
+        # turn on overlays
+        bpy.context.space_data.overlay.show_overlays = True
+        
+        return {'FINISHED'}
+
 # Generate section
 class GeneratePanel(bpy.types.Panel):
     bl_label = "Generate"
@@ -784,6 +942,109 @@ class EvaluatePanel(bpy.types.Panel):
         row.label(text = properties.rating_bar2)
         row = box.row()
         row.label(text = properties.rating_bar3)
+
+class ColorPanel(bpy.types.Panel):
+    bl_label = "Color Info"
+    bl_idname = "PT_ColorPanel"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AI"
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        properties = scene.custom_properties
+        
+        #custom icons for colors
+        img_1 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '0.png'))
+        img_2 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '30.png'))
+        img_3 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '60.png'))
+        img_4 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '90.png'))
+        img_5 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '120.png'))
+        img_6 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '150.png'))
+        img_7 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '180.png'))
+        img_8 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '210.png'))
+        img_9 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '240.png'))
+        img_10 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '270.png'))
+        img_11 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '300.png'))
+        img_12 = bpy.data.images.load(os.path.join(bpy.path.abspath("//icons"), '330.png'))
+        
+        icon_1 = self.layout.icon(bpy.data.images['0.png'])
+        icon_2 = self.layout.icon(bpy.data.images['30.png'])
+        icon_3 = self.layout.icon(bpy.data.images['60.png'])
+        icon_4 = self.layout.icon(bpy.data.images['90.png'])
+        icon_5 = self.layout.icon(bpy.data.images['120.png'])
+        icon_6 = self.layout.icon(bpy.data.images['150.png'])
+        icon_7 = self.layout.icon(bpy.data.images['180.png'])
+        icon_8 = self.layout.icon(bpy.data.images['210.png'])
+        icon_9 = self.layout.icon(bpy.data.images['240.png'])
+        icon_10 = self.layout.icon(bpy.data.images['270.png'])
+        icon_11 = self.layout.icon(bpy.data.images['300.png'])
+        icon_12 = self.layout.icon(bpy.data.images['330.png'])
+        
+        row = layout.row()
+        row.operator(ColorStats.bl_idname, text = "Update", icon="FILE_REFRESH")
+        row = layout.row()
+        row.alignment = 'CENTER'
+        row.label(text="Color Distribution")
+        row = layout.row()
+        row = layout.row()
+        row.label(text=properties.color_1, icon_value=icon_1)
+        row = layout.row()
+        row.label(text=properties.color_2, icon_value=icon_2)
+        row = layout.row()
+        row.label(text=properties.color_3, icon_value=icon_3)
+        row = layout.row()
+        row.label(text=properties.color_4, icon_value=icon_4)
+        row = layout.row()
+        row.label(text=properties.color_5, icon_value=icon_5)
+        row = layout.row()
+        row.label(text=properties.color_6, icon_value=icon_6)
+        row = layout.row()
+        row.label(text=properties.color_7, icon_value=icon_7)
+        row = layout.row()
+        row.label(text=properties.color_8, icon_value=icon_8)
+        row = layout.row()
+        row.label(text=properties.color_9, icon_value=icon_9)
+        row = layout.row()
+        row.label(text=properties.color_10, icon_value=icon_10)
+        row = layout.row()
+        row.label(text=properties.color_11, icon_value=icon_11)
+        row = layout.row()
+        row.label(text=properties.color_12, icon_value=icon_12)
+        row = layout.row()
+        row = layout.row()
+        row = layout.row()
+        
+        row = layout.row()
+        row = layout.row()
+        row.alignment = 'CENTER'
+        row.label(text="Color Harmony")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Monochromatic")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Complementary")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Split Complementary")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Triad")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Square")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Rectangular")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Analogous")
+        row = layout.row()
+        row.alert = True
+        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Other")
+        
         
 # ------------------------------------------------------------------------
 #     Registration
@@ -798,8 +1059,21 @@ classes = (
     TrainPanel,
     Properties,
     EvaluatePanel,
-    DataInfo
+    DataInfo,
+    ColorStats,
+    ColorPanel
 )
+
+import bpy.utils.previews
+icons_dict = bpy.utils.previews.new()
+# this will work for addons 
+icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+# but it won't give you usefull path when you opened a file in text editor and hit run.
+# this will work in that case:
+script_path = bpy.context.space_data.text.filepath
+icons_dir = os.path.join(os.path.dirname(script_path), "icons")
+
+icons_dict.load("custom_icon", os.path.abspath(os.path.join(icons_dir, "run.png")), 'IMAGE')
 
 def register():
     from bpy.utils import register_class
