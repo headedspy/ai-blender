@@ -27,6 +27,8 @@ from tensorflow.keras import callbacks
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
 
+from colorthief import ColorThief
+
 def rgb_to_hsv(arr):
     arr = np.asarray(arr)
 
@@ -63,6 +65,129 @@ def rgb_to_hsv(arr):
     out[..., 2] = arr_max
 
     return out.reshape(in_shape)
+
+TOLERANCE = 30.0
+
+def compare(angle, min, max):
+    if(min + (2*TOLERANCE) != max):
+        max += 360
+    
+    return((angle > min) and (angle < max))
+
+def analogous(hues):
+    for h in range(len(hues)):
+        max_angle = hues[h]+TOLERANCE
+        if(max_angle > 360): max_angle -= 360
+        
+        min_angle = hues[h]-TOLERANCE
+        if(min_angle < 0): min_angle = 360 + min_angle
+        
+        nh = h+1
+        while(nh < len(hues)):
+            if(compare(hues[nh], min_angle, max_angle)):
+                return True
+            nh += 1
+            
+    return False
+
+def complementary(hues):
+    for h in range(len(hues)):
+        opposite = hues[h] + 180
+        if(opposite > 360): opposite -= 360
+        
+        max_angle = opposite+TOLERANCE
+        if(max_angle > 360): max_angle -= 360
+        
+        min_angle = opposite-TOLERANCE
+        if(min_angle < 0): min_angle = 360 + min_angle
+        
+        nh = h+1
+        while(nh < len(hues)):
+            if(compare(hues[nh], min_angle, max_angle)):
+                return True
+            nh += 1
+    
+    return False
+
+def monochromatic(hues):
+    max_angle = hues[0]+TOLERANCE
+    if(max_angle > 360): max_angle -= 360
+    
+    min_angle = hues[0]-TOLERANCE
+    if(min_angle < 0): min_angle = 360 + min_angle
+        
+    nh = 1
+    while(nh < len(hues)):
+        if(not compare(hues[nh], min_angle, max_angle)):
+            return False
+        nh += 1
+            
+    return True
+
+def triad(hues):
+    for h in range(len(hues)):
+        
+        nh = h+1
+        while(nh < len(hues)):
+            
+            nnh = nh+1
+            while(nnh < len(hues)):
+                hue1 = hues[h] + 120
+                if(hue1 > 360): hue1 -= 360
+                
+                hue2 = hue1 + 120
+                if(hue2 > 360): hue2 -= 360
+                
+                min_hue1 = hue1 - TOLERANCE
+                if(min_hue1 < 0): min_hue1 = 360 + min_hue1
+                max_hue1 = hue1 + TOLERANCE
+                if(max_hue1 > 360): max_hue1 -= 360
+                
+                min_hue2 = hue2 - TOLERANCE
+                if(min_hue2 < 0): min_hue2 = 360 + min_hue2
+                max_hue2 = hue2 + TOLERANCE
+                if(max_hue2 > 360): max_hue2 -= 360
+                
+                if((compare(hues[nh], min_hue1, max_hue1) and compare(hues[nnh], min_hue2, max_hue2)) or
+                   (compare(hues[nnh], min_hue1, max_hue1) and compare(hues[nh], min_hue2, max_hue2))):
+                    return True
+            
+                nnh += 1
+            
+            nh += 1
+    
+    return False
+
+def square(hues):
+    hues.sort()
+
+    hue1 = hues[0] + 90
+    if(hue1 > 360): hue1 -= 360
+    hue2 = hue1 + 90
+    if(hue2 > 360): hue2 -= 360
+    hue3 = hue2 + 90
+    if(hue3 > 360): hue3 -= 360
+
+    min_hue1 = hue1 - TOLERANCE
+    if(min_hue1 < 0): min_hue1 = 360 + min_hue1
+    max_hue1 = hue1 + TOLERANCE
+    if(max_hue1 > 360): max_hue1 -= 360
+    
+    min_hue2 = hue2 - TOLERANCE
+    if(min_hue2 < 0): min_hue2 = 360 + min_hue2
+    max_hue2 = hue2 + TOLERANCE
+    if(max_hue2 > 360): max_hue2 -= 360
+    
+    min_hue3 = hue3 - TOLERANCE
+    if(min_hue3 < 0): min_hue3 = 360 + min_hue3
+    max_hue3 = hue3 + TOLERANCE
+    if(max_hue3 > 360): max_hue3 -= 360
+    
+    if(compare(hues[1], min_hue1, max_hue1) and compare(hues[2], min_hue2, max_hue2) and compare(hues[3], min_hue3, max_hue3)):
+        return True
+    
+    return False
+
 
 # Properties storage
 class Properties(PropertyGroup):
@@ -241,6 +366,26 @@ class Properties(PropertyGroup):
     color_12: StringProperty(
         name = "Color 12",
         default = ""
+    )
+    harmony_analogous:BoolProperty(
+        name="Analogous Color Harmony",
+        default=False
+    )
+    harmony_complementary:BoolProperty(
+        name="Complementary Color Harmony",
+        default=False
+    )
+    harmony_monochromatic:BoolProperty(
+        name="Monochromatic Color Harmony",
+        default=False
+    )
+    harmony_triad:BoolProperty(
+        name="Triad Color Harmony",
+        default=False
+    )
+    harmony_square:BoolProperty(
+        name="Square Color Harmony",
+        default=False
     )
 
 class Constants():
@@ -758,6 +903,22 @@ class ColorStats(bpy.types.Operator):
         properties.color_12 = "▓"*int(hues_12[11]/(width*height)*len_bar)
         properties.color_12 += ((len_bar - (len(properties.color_12)))*'▒')
         
+        color_thief = ColorThief("C:/image.png")
+        palette = color_thief.get_palette(color_count=3)
+
+        hsv_palette = rgb_to_hsv(np.array(palette)/255)
+
+        hues = []
+        for i in range(len(hsv_palette)):
+            hue = int(hsv_palette[i][0]*360.0)
+            hues.append(hue)
+        
+        properties.harmony_analogous = analogous(hues)
+        properties.harmony_complementary = complementary(hues)
+        properties.harmony_monochromatic = monochromatic(hues)
+        properties.harmony_triad = triad(hues)
+        properties.harmony_square = square(hues)
+        
         # delete temp
         os.remove("C:/image.png")
         
@@ -1022,28 +1183,20 @@ class ColorPanel(bpy.types.Panel):
         row.label(text="Color Harmony")
         row = layout.row()
         row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Monochromatic")
+        row.label(text= ("▓▓▓" if properties.harmony_analogous else "▒▒▒") + " Analogous")
         row = layout.row()
         row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Complementary")
+        row.label(text= ("▓▓▓" if properties.harmony_complementary else "▒▒▒") + " Complementary")
         row = layout.row()
         row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Split Complementary")
+        row.label(text= ("▓▓▓" if properties.harmony_monochromatic else "▒▒▒") + " Monochromatic")
         row = layout.row()
         row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Triad")
+        row.label(text= ("▓▓▓" if properties.harmony_triad else "▒▒▒") + " Triad")
         row = layout.row()
         row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Square")
+        row.label(text= ("▓▓▓" if properties.harmony_square else "▒▒▒") + " Square")
         row = layout.row()
-        row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Rectangular")
-        row = layout.row()
-        row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Analogous")
-        row = layout.row()
-        row.alert = True
-        row.label(text="▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Other")
         
         
 # ------------------------------------------------------------------------
