@@ -1,8 +1,7 @@
 # AI-assisted tool for evaluating aesthetic and composition quality of blender 3D scenes
 Personal project for the AI & Society minor by Vladimir Vladinov
 
-![image](https://user-images.githubusercontent.com/22458048/207861546-e37c689a-f9bd-43b1-8816-2f380c585489.png)
-
+![image](https://user-images.githubusercontent.com/22458048/210403996-ad58769c-2575-4606-83f7-b5d7bc68cc92.png)
 
 
 ## Generating training data
@@ -73,3 +72,15 @@ The "Evaluate" sub-menu can be used to evaluate the compositional integrity of y
 |![image](https://user-images.githubusercontent.com/22458048/205689219-852c1728-bdac-4fd2-857c-46f929949cb1.png)|Evaluate|Feed the viewport camera's view of the scene into the model and output the predicted composition rating|
 |![image](https://user-images.githubusercontent.com/22458048/205689400-224f4787-49f5-4353-b9ae-f556e58ffb45.png)|Rating|The rating of the scene given by the AI|
 |![image](https://user-images.githubusercontent.com/22458048/207862341-9d8bb3a9-170f-4783-b980-c75f0f8d27c8.png)|Confidence|The confidence in evaluating the scene for every rating|
+
+## Color info
+You can extract information about the color palette used in the scene with the "Color Info" sub-menu. It displays color distribution, color harmony and emotions invoked by the color combinations.
+
+![image](https://user-images.githubusercontent.com/22458048/210405251-6f9df384-5062-4d02-903c-9ad20ce56d99.png)
+| Icon  | Name | Description |
+| ------------- | ------------- | ------------- |
+|![image](https://user-images.githubusercontent.com/22458048/210405286-93d9886e-a2f4-457e-b6ce-2cbf7a95a385.png)|Update button|Render the viewport and update the color information according to the rendered image|
+|![image](https://user-images.githubusercontent.com/22458048/210405406-49a55fcd-7707-406f-af14-328a4dcefc07.png)|Color Distribution|Distribution of hues on the image among 12 basic colors|
+|![image](https://user-images.githubusercontent.com/22458048/210405613-81f46188-99e3-4be6-989d-d8e82215ff49.png)|Color harmony|Is there a color harmony found in the chosen colors. There can be more than one and in the given example only "Analogous" was found|
+|![image](https://user-images.githubusercontent.com/22458048/210405844-9e007407-4574-4a65-aa4a-a494f0c8b776.png)|Color feel|AI-determined emotions, invoked by only the colors in the image.|
+
