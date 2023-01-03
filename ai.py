@@ -387,6 +387,10 @@ class Properties(PropertyGroup):
         name="Square Color Harmony",
         default=False
     )
+    color_feel:StringProperty(
+        name="Color feels",
+        default="[FEEL][FEEL][FEEL]"
+    )
 
 class Constants():
     #minimal distance from camera
@@ -919,6 +923,61 @@ class ColorStats(bpy.types.Operator):
         properties.harmony_triad = triad(hues)
         properties.harmony_square = square(hues)
         
+        #get color-conveying emotions
+        palette = color_thief.get_palette(color_count=5, quality=1)
+        input_col = []
+        
+        for color in palette:
+            color_arr = []
+            for channel in color:
+                color_arr.append(channel)
+            input_col.append(color_arr)
+        
+        model_name = "emotions.h5"
+        model = keras.models.load_model(bpy.path.abspath("//models\\" + model_name))
+        
+        probability_model = keras.Sequential([
+          model,
+          keras.layers.Softmax()
+        ])
+        
+        probability = probability_model(np.expand_dims(np.array(input_col), axis=0))
+        print(probability)
+        prob_list = probability[0].numpy().tolist()
+
+        names = {0 : "agreeableness",
+         1 : "anger",
+         2 : "anticipation",
+         3 : "arrogance",
+         4 : "disagreeableness",
+         5 : "disgust",
+         6 : "fear",
+         7 : "gratitude",
+         8 : "happiness",
+         9 : "humility",
+         10 : "love",
+         11 : "optimism",
+         12 : "pessimism",
+         13 : "regret",
+         14 : "sadness",
+         15 : "shame",
+         16 : "shyness",
+         17 : "surprise",
+         18 : "trust",
+         19 : "neutral"}
+
+
+        rating = prob_list.index(max(prob_list))
+        properties.color_feel = names[rating] + ", "
+
+        prob_list[rating] = 0
+        rating = prob_list.index(max(prob_list))
+        properties.color_feel += names[rating] + ", "
+
+        prob_list[rating] = 0
+        rating = prob_list.index(max(prob_list))
+        properties.color_feel += names[rating]
+        
         # delete temp
         os.remove("C:/image.png")
         
@@ -1197,6 +1256,11 @@ class ColorPanel(bpy.types.Panel):
         row.alert = True
         row.label(text= ("▓▓▓" if properties.harmony_square else "▒▒▒") + " Square")
         row = layout.row()
+        row = layout.row()
+        row.alignment = 'CENTER'
+        row.label(text="Color Feel")
+        row = layout.row()
+        row.label(text=properties.color_feel)
         
         
 # ------------------------------------------------------------------------
